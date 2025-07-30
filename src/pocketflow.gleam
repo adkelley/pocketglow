@@ -1,4 +1,5 @@
 import gleam/dict.{type Dict}
+import gleam/list
 
 pub type PocketflowError {
   Insert(String)
@@ -79,4 +80,9 @@ pub fn get(
 
 pub fn node(prep prep, exec exec, post post) -> Shared(a) {
   prep |> exec |> post
+}
+
+pub fn batch_node(prep prep, exec exec, post post) -> Shared(a) {
+  let exec_ = fn(items: List(List(xs))) { list.map(items, exec) }
+  prep |> exec_ |> post
 }
