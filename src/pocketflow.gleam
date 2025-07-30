@@ -5,19 +5,19 @@ pub type PocketflowError {
   Get(String)
 }
 
-pub type Data =
-  Dict(String, String)
+pub type Data(a) =
+  Dict(String, a)
 
 type NodeName =
   String
 
-pub type Shared =
-  Dict(NodeName, Data)
+pub type Shared(a) =
+  Dict(NodeName, Data(a))
 
-pub type Flow =
-  fn(Shared) -> Shared
+pub type Flow(a) =
+  fn(Shared(a)) -> Shared(a)
 
-fn new_acc(shared: Shared, nodes: List(String)) -> Shared {
+fn new_acc(shared: Shared(a), nodes: List(String)) -> Shared(a) {
   case nodes {
     [] -> shared
     [node_name, ..rest] -> {
@@ -28,17 +28,17 @@ fn new_acc(shared: Shared, nodes: List(String)) -> Shared {
   }
 }
 
-pub fn new(nodes: List(String)) -> Shared {
+pub fn new(nodes: List(String)) -> Shared(a) {
   dict.new()
   |> new_acc(nodes)
 }
 
 pub fn insert(
-  shared shared: Shared,
+  shared shared: Shared(a),
   node_name node_name: String,
   key key: String,
-  value value: String,
-) -> Result(Shared, PocketflowError) {
+  value value: a,
+) -> Result(Shared(a), PocketflowError) {
   case dict.get(shared, node_name) {
     Ok(data) -> {
       dict.new()
@@ -56,10 +56,10 @@ pub fn insert(
 }
 
 pub fn get(
-  shared shared: Shared,
+  shared shared: Shared(a),
   node_name node_name: String,
   key key: String,
-) -> Result(String, PocketflowError) {
+) -> Result(a, PocketflowError) {
   case dict.get(shared, node_name) {
     Ok(data) -> {
       case dict.get(data, key) {
@@ -77,6 +77,6 @@ pub fn get(
   }
 }
 
-pub fn node(prep prep, exec exec, post post) -> Shared {
+pub fn node(prep prep, exec exec, post post) -> Shared(a) {
   prep |> exec |> post
 }
