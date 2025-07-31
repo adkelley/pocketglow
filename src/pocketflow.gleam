@@ -1,15 +1,11 @@
-import gleam/dict.{type Dict}
 import gleam/list
 
-pub type Shared(a) =
-  Dict(String, a)
+pub type Shared(a) {
+  Shared(a)
+}
 
 pub type Flow(a) =
   fn(Shared(a)) -> Shared(a)
-
-pub fn new() -> Shared(a) {
-  dict.new()
-}
 
 pub fn node(prep prep, exec exec, post post) -> Shared(a) {
   prep |> exec |> post
