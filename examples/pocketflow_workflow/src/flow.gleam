@@ -1,8 +1,22 @@
 import nodes
-import pocketflow.{type Flow}
+import pocketflow.{type Flow, type Shared, Shared}
+import types.{type Values, Values}
 
-/// Create and configure the article writing workflow
-pub fn create_article_flow() -> Flow(String) {
+pub fn run(topic: String) -> Shared(Values) {
+  let values =
+    Values(
+      topic: topic,
+      outline_yaml: "",
+      formatted_outline: "",
+      draft: "",
+      final_article: "",
+    )
+  let run = create_article_flow()
+  run(Shared(values))
+}
+
+/// Create and configure the csv processing workflow
+fn create_article_flow() -> Flow(Values) {
   // # Connect nodes in sequence
   // # Create flow starting with outline node
   fn(shared) {

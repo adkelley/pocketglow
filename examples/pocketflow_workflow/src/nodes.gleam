@@ -1,15 +1,15 @@
-import gleam/dict
 import gleam/io
 import gleam/list
 import gleam/string
-import pocketflow.{type Shared}
+import pocketflow.{type Shared, Shared}
+import types.{type Values, Values}
 import utils/call_llm.{call_llm}
 
-pub fn generate_outline(shared: Shared(String)) -> Shared(String) {
+pub fn generate_outline(shared: Shared(Values)) -> Shared(Values) {
   pocketflow.node(
     prep: {
-      let assert Ok(topic) = pocketflow.get(shared, "generate_outline", "topic")
-      topic
+      let Shared(values) = shared
+      values.topic
     },
     exec: fn(topic: String) {
       let prompt =
@@ -42,13 +42,6 @@ pub fn generate_outline(shared: Shared(String)) -> Shared(String) {
       outline_yaml
     },
     post: fn(outline_yaml: String) {
-      let assert Ok(post_res) =
-        pocketflow.insert(
-          shared,
-          "generate_outline",
-          "outline_yaml",
-          outline_yaml,
-        )
       io.println("\n===== OUTLINE (YAML) =====\n")
       io.println(outline_yaml)
       io.println("\n===== PARSED OUTLINE =====\n")
@@ -58,35 +51,36 @@ pub fn generate_outline(shared: Shared(String)) -> Shared(String) {
         "1. Introduction to AI Safety\n2. Key Challenges in AI Safety\n3. Strategies for Ensuring AI Safety\n"
       io.println(formatted_outline)
       io.println("=========================")
-      let assert Ok(post_res) =
-        pocketflow.insert(
-          post_res,
-          "generate_outline",
-          "formatted_outline",
-          formatted_outline,
-        )
       // Display results
       io.println("\n===== OUTLINE (YAML) =====\n")
       io.println(outline_yaml)
       io.println("\n===== PARSED OUTLINE =====\n")
       io.println(formatted_outline)
       io.println("=========================")
-      post_res
+
+      let Shared(values) = shared
+      Shared(
+        Values(
+          ..values,
+          outline_yaml: outline_yaml,
+          formatted_outline: formatted_outline,
+        ),
+      )
     },
   )
 }
 
-pub fn write_simple_content(shared: Shared(String)) -> Shared(String) {
+pub fn write_simple_content(shared: Shared(Values)) -> Shared(Values) {
   pocketflow.node(
     prep: {
-      let assert Ok(formatted_outline) =
-        pocketflow.get(shared, "generate_outline", "formatted_outline")
+      let Shared(values) = shared
+      let formatted_outline = values.formatted_outline
       // extract each section into a list and pass to exec
       string.split(formatted_outline, "\n")
       |> list.filter(fn(xs) { xs != "" })
     },
     exec: fn(sections: List(String)) {
-      list.fold(sections, shared, fn(acc, section) {
+      list.fold(sections, [], fn(acc, section) {
         let prompt = "
       Write a short paragraph (MAXIMUM 100 WORDS) about this section:" <> section <> "
 
@@ -97,14 +91,11 @@ pub fn write_simple_content(shared: Shared(String)) -> Shared(String) {
       - Include one brief example or analogy
       "
         let content = call_llm(prompt)
-        let assert Ok(acc) =
-          pocketflow.insert(acc, "write_simple_content", section, content)
-        acc
+        list.prepend(acc, #(section, content))
       })
+      |> list.reverse
     },
-    post: fn(exec_res: Shared(String)) {
-      let assert Ok(sections) = dict.get(exec_res, "write_simple_content")
-      let sections = dict.to_list(sections)
+    post: fn(sections: List(#(String, String))) {
       io.println("\n===== SECTION CONTENTS =====\n")
       let draft =
         list.fold(over: sections, from: "", with: fn(acc, tuple) {
@@ -115,19 +106,18 @@ pub fn write_simple_content(shared: Shared(String)) -> Shared(String) {
           acc <> section <> "\n" <> content <> "\n"
         })
       io.println("===========================")
-      let assert Ok(post_res) =
-        pocketflow.insert(exec_res, "write_simple_content", "draft", draft)
-      post_res
+
+      let Shared(values) = shared
+      Shared(Values(..values, draft: draft))
     },
   )
 }
 
-pub fn apply_style(shared: Shared(String)) -> Shared(String) {
+pub fn apply_style(shared: Shared(Values)) -> Shared(Values) {
   pocketflow.node(
     prep: {
-      let assert Ok(draft) =
-        pocketflow.get(shared, "write_simple_content", "draft")
-      draft
+      let Shared(values) = shared
+      values.draft
     },
     exec: fn(draft: String) {
       // Apply a specific style to the article
@@ -142,14 +132,13 @@ pub fn apply_style(shared: Shared(String)) -> Shared(String) {
         "
       call_llm(prompt)
     },
-    post: fn(exec_res: String) {
+    post: fn(final_article: String) {
       //  Store the final article in shared data
-      let assert Ok(post_res) =
-        pocketflow.insert(shared, "apply_style", "final_article", exec_res)
       io.println("\n===== FINAL ARTICLE =====\n")
-      io.println(exec_res)
+      io.println(final_article)
       io.println("\n========================")
-      post_res
+      let Shared(values) = shared
+      Shared(Values(..values, final_article: final_article))
     },
   )
 }
