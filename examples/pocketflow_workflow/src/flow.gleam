@@ -11,8 +11,7 @@ pub fn run(topic: String) -> Shared(Values) {
       draft: "",
       final_article: "",
     )
-  let run = create_article_flow()
-  run(Shared(values))
+  pocketflow.flow(Shared(values), create_article_flow)
 }
 
 /// Create and configure the csv processing workflow
