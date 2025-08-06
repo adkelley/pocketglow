@@ -1,13 +1,13 @@
 import gleam/int
 import gleam/list
-import pocketflow.{type Shared, Shared}
-import types.{type Values, Statistics, Values}
+import pocketflow.{type Fsm, type Shared, Fsm, Shared}
+import types.{type Transitions, type Values, Done, Statistics, Values}
 
 type Sales {
   Sales(total_sales: Int, num_transactions: Int, total_amount: Int)
 }
 
-pub fn csv_processer(shared: Shared(Values)) -> Shared(Values) {
+pub fn csv_processer(shared: Shared(Values)) -> Fsm(Values, Transitions) {
   pocketflow.batch_node(
     prep: {
       let chunks = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]
@@ -29,11 +29,18 @@ pub fn csv_processer(shared: Shared(Values)) -> Shared(Values) {
         int.to_float(total_sales) /. int.to_float(total_transactions)
       //  Store the final article in shared datao
       let Shared(post_res) = shared
-      Shared(
-        Values(
-          ..post_res,
-          statistics: Statistics(total_sales, total_transactions, average_sale),
+      Fsm(
+        Shared(
+          Values(
+            ..post_res,
+            statistics: Statistics(
+              total_sales,
+              total_transactions,
+              average_sale,
+            ),
+          ),
         ),
+        Done,
       )
     },
   )

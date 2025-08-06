@@ -5,3 +5,8 @@ pub type Statistics {
 pub type Values {
   Values(input_file: String, chunk_size: Int, statistics: Statistics)
 }
+
+pub type Transitions {
+  Done
+  Processor
+}
