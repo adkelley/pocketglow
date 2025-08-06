@@ -1,24 +1,24 @@
 import gleam/io
-import pocketflow.{type Shared, Shared}
-import types.{type Values, Values}
+import pocketflow.{type Fsm, type Shared, Fsm}
+import types.{type Transitions, type Values, Done, Filter, Save}
 
-pub fn load_image(shared: Shared(Values)) -> Shared(Values) {
-  pocketflow.node(prep: { 1 }, exec: fn(_i: Int) { 1 }, post: fn(_i: Int) {
+pub fn load_image(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+  pocketflow.basic_node(prep: { 1 }, exec: fn(_i: Int) { 1 }, post: fn(_i: Int) {
     io.println("load_image")
-    shared
+    Fsm(shared, Filter)
   })
 }
 
-pub fn apply_filter(shared: Shared(Values)) -> Shared(Values) {
-  pocketflow.node(prep: { 1 }, exec: fn(_i: Int) { 1 }, post: fn(_i: Int) {
+pub fn apply_filter(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+  pocketflow.basic_node(prep: { 1 }, exec: fn(_i: Int) { 1 }, post: fn(_i: Int) {
     io.println("apply_filter")
-    shared
+    Fsm(shared, Save)
   })
 }
 
-pub fn save_image(shared: Shared(Values)) -> Shared(Values) {
-  pocketflow.node(prep: { 1 }, exec: fn(_i: Int) { 1 }, post: fn(_i: Int) {
+pub fn save_image(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+  pocketflow.basic_node(prep: { 1 }, exec: fn(_i: Int) { 1 }, post: fn(_i: Int) {
     io.println("save_image")
-    shared
+    Fsm(shared, Done)
   })
 }
