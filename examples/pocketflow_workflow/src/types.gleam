@@ -7,3 +7,10 @@ pub type Values {
     final_article: String,
   )
 }
+
+pub type Transitions {
+  Article
+  Outline
+  Content
+  Style
+}

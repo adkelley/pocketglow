@@ -1,12 +1,12 @@
 import gleam/io
 import gleam/list
 import gleam/string
-import pocketflow.{type Shared, Shared}
-import types.{type Values, Values}
+import pocketflow.{type Fsm, type Shared, Fsm, Shared}
+import types.{type Transitions, type Values, Article, Content, Style, Values}
 import utils/call_llm.{call_llm}
 
-pub fn generate_outline(shared: Shared(Values)) -> Shared(Values) {
-  pocketflow.node(
+pub fn generate_outline(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+  pocketflow.basic_node(
     prep: {
       let Shared(values) = shared
       values.topic
@@ -59,19 +59,22 @@ pub fn generate_outline(shared: Shared(Values)) -> Shared(Values) {
       io.println("=========================")
 
       let Shared(values) = shared
-      Shared(
-        Values(
-          ..values,
-          outline_yaml: outline_yaml,
-          formatted_outline: formatted_outline,
+      Fsm(
+        Shared(
+          Values(
+            ..values,
+            outline_yaml: outline_yaml,
+            formatted_outline: formatted_outline,
+          ),
         ),
+        Content,
       )
     },
   )
 }
 
-pub fn write_simple_content(shared: Shared(Values)) -> Shared(Values) {
-  pocketflow.node(
+pub fn write_simple_content(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+  pocketflow.basic_node(
     prep: {
       let Shared(values) = shared
       let formatted_outline = values.formatted_outline
@@ -108,13 +111,13 @@ pub fn write_simple_content(shared: Shared(Values)) -> Shared(Values) {
       io.println("===========================")
 
       let Shared(values) = shared
-      Shared(Values(..values, draft: draft))
+      Fsm(Shared(Values(..values, draft: draft)), Style)
     },
   )
 }
 
-pub fn apply_style(shared: Shared(Values)) -> Shared(Values) {
-  pocketflow.node(
+pub fn apply_style(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+  pocketflow.basic_node(
     prep: {
       let Shared(values) = shared
       values.draft
@@ -138,7 +141,7 @@ pub fn apply_style(shared: Shared(Values)) -> Shared(Values) {
       io.println(final_article)
       io.println("\n========================")
       let Shared(values) = shared
-      Shared(Values(..values, final_article: final_article))
+      Fsm(Shared(Values(..values, final_article: final_article)), Article)
     },
   )
 }
