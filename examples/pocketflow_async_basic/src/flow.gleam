@@ -1,24 +1,25 @@
 import nodes
-import pocketflow.{type Fsm, type Shared, Fsm, Shared}
+import pocketflow.{type Node, Node}
 import types.{
-  type Transitions, type Values, Accept, Approve, Fetch, Retry, Suggest, Values,
+  type Branched, type Shared, type Start, Accepted, Retry, Shared, Start,
 }
 
-fn init() -> Shared(Values) {
-  Shared(Values(recipes: [], ingredient: "", suggestion: ""))
+fn new() -> Node(Start, Shared) {
+  Node(Start, Shared(recipes: [], ingredient: "", suggestion: ""))
 }
 
-pub fn start() {
-  pocketflow.flow(Fsm(init(), Fetch), flow)
+pub fn run_flow() -> Node(Branched, Shared) {
+  let start = new()
+  let Node(branch, shared) = pocketflow.basic_flow(start, create_flow())
+
+  case branch {
+    Retry -> run_flow()
+    Accepted -> Node(Accepted, shared)
+  }
 }
 
-fn flow(fsm: Fsm(Values, Transitions)) -> Shared(Values) {
-  let Fsm(shared, transition) = fsm
-  case transition {
-    Fetch -> flow(nodes.fetch_recipes(shared))
-    Suggest -> flow(nodes.suggest_recipe(shared))
-    Approve -> flow(nodes.get_approval(shared))
-    Accept -> shared
-    Retry -> flow(nodes.fetch_recipes(init()))
+fn create_flow() -> fn(Node(Start, Shared)) -> Node(Branched, Shared) {
+  fn(node) {
+    nodes.fetch_recipes(node) |> nodes.suggest_recipe |> nodes.get_approval
   }
 }

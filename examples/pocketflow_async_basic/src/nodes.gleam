@@ -1,63 +1,66 @@
 import gleam/io
 import gleam/string
-import pocketflow.{type Shared, Fsm, Shared}
+import pocketflow.{type Node, Node}
 import task
-import types.{type Values, Accept, Approve, Retry, Suggest, Values}
+import types.{
+  type Branched, type Fetched, type Shared, type Start, type Suggested, Accepted,
+  Fetched, Retry, Shared, Start, Suggested,
+}
 import utils
 
-pub fn fetch_recipes(shared: Shared(Values)) {
+pub fn fetch_recipes(recipe: Node(Start, Shared)) -> Node(Fetched, Shared) {
   pocketflow.basic_node(
     prep: {
       let handle =
         task.async(fn() { utils.get_user_input("Enter ingredient: ") })
-      let Shared(values) = shared
-      Values(..values, ingredient: task.await(handle, 10_000))
+      let Node(Start, shared) = recipe
+      Shared(..shared, ingredient: task.await_forever(handle))
     },
-    exec: fn(values: Values) {
-      let handle = task.async(fn() { utils.fetch_recipes(values.ingredient) })
-      Values(..values, recipes: task.await(handle, 5000))
+    exec: fn(shared: Shared) {
+      let handle = task.async(fn() { utils.fetch_recipes(shared.ingredient) })
+      Shared(..shared, recipes: task.await_forever(handle))
     },
-    post: fn(values: Values) { Fsm(Shared(values), Suggest) },
+    post: fn(shared: Shared) { Node(Fetched, shared) },
   )
 }
 
-pub fn suggest_recipe(shared: Shared(Values)) {
+pub fn suggest_recipe(recipe: Node(Fetched, Shared)) -> Node(Suggested, Shared) {
   pocketflow.basic_node(
     prep: {
-      let Shared(values) = shared
-      values
+      let Node(Fetched, shared) = recipe
+      shared
     },
-    exec: fn(values: Values) {
+    exec: fn(shared: Shared) {
       let handle =
         task.async(fn() {
-          utils.call_llm_async(string.join(values.recipes, ", "))
+          utils.call_llm_async(string.join(shared.recipes, ", "))
         })
-      Values(..values, suggestion: task.await(handle, 5000))
+      Shared(..shared, suggestion: task.await_forever(handle))
     },
-    post: fn(values: Values) { Fsm(Shared(values), Approve) },
+    post: fn(shared: Shared) { Node(Suggested, shared) },
   )
 }
 
-pub fn get_approval(shared: Shared(Values)) {
+pub fn get_approval(recipe: Node(Suggested, Shared)) -> Node(Branched, Shared) {
   pocketflow.basic_node(
     prep: { Nil },
     exec: fn(_) {
       let handle =
         task.async(fn() { utils.get_user_input("\nAccept this recipe? (y/n) ") })
-      task.await(handle, 5000)
+      task.await_forever(handle)
     },
     post: fn(answer: String) {
-      let Shared(values) = shared
+      let Node(Suggested, shared) = recipe
       case answer {
         "y" -> {
           io.println("\nGreat choice! Here's your recipe...")
-          io.println("Recipe: " <> values.suggestion)
-          io.println("Ingredient: " <> values.ingredient)
-          Fsm(shared, Accept)
+          io.println("Recipe: " <> shared.suggestion)
+          io.println("Ingredient: " <> shared.ingredient)
+          Node(Accepted, shared)
         }
         _ -> {
           io.println("\nLet's try another recipe...")
-          Fsm(shared, Retry)
+          Node(Retry, shared)
         }
       }
     },

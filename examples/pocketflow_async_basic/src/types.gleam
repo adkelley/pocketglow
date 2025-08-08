@@ -1,11 +1,20 @@
-pub type Values {
-  Values(recipes: List(String), ingredient: String, suggestion: String)
+pub type Shared {
+  Shared(recipes: List(String), ingredient: String, suggestion: String)
 }
 
-pub type Transitions {
-  Fetch
-  Suggest
-  Approve
-  Accept
+pub type Fetched {
+  Fetched
+}
+
+pub type Start {
+  Start
+}
+
+pub type Suggested {
+  Suggested
+}
+
+pub type Branched {
+  Accepted
   Retry
 }
