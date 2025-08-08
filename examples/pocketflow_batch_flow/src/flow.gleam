@@ -1,9 +1,9 @@
 import gleam/list
 import nodes
-import pocketflow.{type Fsm, type Shared, Fsm, Shared}
-import types.{type Transitions, type Values, Done, Filter, Load, Save, Values}
+import pocketflow.{type Node, Node}
+import types.{type Saved, type Shared, type Start, Shared, Start}
 
-fn image_batch_flow() -> List(Fsm(Values, Transitions)) {
+fn image_batch_flow() -> List(Node(Start, Shared)) {
   let images = ["cat.jpg", "dog.jpg", "bird.jpg"]
   // List of filters to apply
   let filters = ["grayscale", "blur", "sepia"]
@@ -11,22 +11,16 @@ fn image_batch_flow() -> List(Fsm(Values, Transitions)) {
   // Generate all combinations
   list.flat_map(images, fn(image) {
     list.flat_map(filters, fn(filter) {
-      list.prepend([], Fsm(Shared(Values(input: image, filter: filter)), Load))
+      list.prepend([], Node(Start, Shared(input: image, filter: filter)))
     })
   })
 }
 
-pub fn flow(fsm: Fsm(Values, Transitions)) -> Shared(Values) {
-  let Fsm(shared, transition) = fsm
-  case transition {
-    Load -> flow(nodes.load_image(shared))
-    Filter -> flow(nodes.apply_filter(shared))
-    Save -> flow(nodes.save_image(shared))
-    Done -> shared
-  }
+fn create_flow() -> fn(Node(Start, Shared)) -> Node(Saved, Shared) {
+  fn(node) { nodes.load_image(node) |> nodes.apply_filter |> nodes.save_image }
 }
 
-pub fn create_flow() -> List(Shared(Values)) {
+pub fn run_flow() -> List(Node(Saved, Shared)) {
   let params = image_batch_flow()
-  pocketflow.batch_flow(params, flow)
+  pocketflow.batch_flow(params, create_flow())
 }

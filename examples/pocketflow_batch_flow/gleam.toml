@@ -14,7 +14,8 @@ version = "1.0.0"
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
-pocketflow = { git = "https://github.com/adkelley/pocketflow", ref = "main" }
+# pocketflow = { git = "https://github.com/adkelley/pocketflow", ref = "main" }
+pocketflow = {path = "/Users/alexkelley/Dropbox/code/gleam/pocketflow"}
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
