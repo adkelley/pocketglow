@@ -1,28 +1,28 @@
 import nodes
-import pocketflow.{type Fsm, type Shared, Fsm, Shared}
-import types.{
-  type Transitions, type Values, Article, Content, Outline, Style, Values,
+import pocketflow.{Node}
+import types.{type Article, type Shared, type Start, type Style, Shared, Start}
+
+pub fn run_flow(topic: String) -> Article(Style, Shared) {
+  let start = new(topic)
+  pocketflow.basic_flow(start, create_article_flow())
 }
 
-pub fn run(topic: String) -> Shared(Values) {
-  let values =
-    Values(
+fn new(topic: String) -> Article(Start, Shared) {
+  let shared =
+    Shared(
       topic: topic,
       outline_yaml: "",
       formatted_outline: "",
       draft: "",
       final_article: "",
     )
-  pocketflow.flow(Fsm(Shared(values), Outline), create_article_flow)
+  Node(Start, shared)
 }
 
-/// Create and configure the csv processing workflow
-fn create_article_flow(fsm: Fsm(Values, Transitions)) -> Shared(Values) {
-  let Fsm(shared, transition) = fsm
-  case transition {
-    Outline -> create_article_flow(nodes.generate_outline(shared))
-    Content -> create_article_flow(nodes.write_simple_content(shared))
-    Style -> create_article_flow(nodes.apply_style(shared))
-    Article -> shared
+fn create_article_flow() -> fn(Article(Start, Shared)) -> Article(Style, Shared) {
+  fn(node) {
+    nodes.generate_outline(node)
+    |> nodes.write_simple_content
+    |> nodes.apply_style
   }
 }

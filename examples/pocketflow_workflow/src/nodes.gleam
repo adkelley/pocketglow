@@ -1,14 +1,21 @@
 import gleam/io
+
 import gleam/list
 import gleam/string
-import pocketflow.{type Fsm, type Shared, Fsm, Shared}
-import types.{type Transitions, type Values, Article, Content, Style, Values}
+import pocketflow.{Node}
+
+import types.{
+  type Article, type Content, type Outline, type Shared, type Start, type Style,
+  Content, Outline, Shared, Start, Style,
+}
 import utils/call_llm.{call_llm}
 
-pub fn generate_outline(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+pub fn generate_outline(
+  article: Article(Start, Shared),
+) -> Article(Outline, Shared) {
   pocketflow.basic_node(
     prep: {
-      let Shared(values) = shared
+      let Node(Start, values) = article
       values.topic
     },
     exec: fn(topic: String) {
@@ -58,26 +65,26 @@ pub fn generate_outline(shared: Shared(Values)) -> Fsm(Values, Transitions) {
       io.println(formatted_outline)
       io.println("=========================")
 
-      let Shared(values) = shared
-      Fsm(
+      let Node(Start, shared) = article
+      Node(
+        Outline,
         Shared(
-          Values(
-            ..values,
-            outline_yaml: outline_yaml,
-            formatted_outline: formatted_outline,
-          ),
+          ..shared,
+          outline_yaml: outline_yaml,
+          formatted_outline: formatted_outline,
         ),
-        Content,
       )
     },
   )
 }
 
-pub fn write_simple_content(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+pub fn write_simple_content(
+  article: Article(Outline, Shared),
+) -> Article(Content, Shared) {
   pocketflow.basic_node(
     prep: {
-      let Shared(values) = shared
-      let formatted_outline = values.formatted_outline
+      let Node(Outline, shared) = article
+      let formatted_outline = shared.formatted_outline
       // extract each section into a list and pass to exec
       string.split(formatted_outline, "\n")
       |> list.filter(fn(xs) { xs != "" })
@@ -110,23 +117,23 @@ pub fn write_simple_content(shared: Shared(Values)) -> Fsm(Values, Transitions) 
         })
       io.println("===========================")
 
-      let Shared(values) = shared
-      Fsm(Shared(Values(..values, draft: draft)), Style)
+      let Node(Outline, shared) = article
+      Node(Content, Shared(..shared, draft: draft))
     },
   )
 }
 
-pub fn apply_style(shared: Shared(Values)) -> Fsm(Values, Transitions) {
+pub fn apply_style(article: Article(Content, Shared)) -> Article(Style, Shared) {
   pocketflow.basic_node(
     prep: {
-      let Shared(values) = shared
-      values.draft
+      let Node(Content, shared) = article
+      shared.draft
     },
     exec: fn(draft: String) {
       // Apply a specific style to the article
       let prompt = "
         Rewrite the following draft in a conversational, engaging style: " <> draft <> "
-        
+
         Make it:
         - Conversational and warm in tone
         - Include rhetorical questions that engage the reader
@@ -140,8 +147,8 @@ pub fn apply_style(shared: Shared(Values)) -> Fsm(Values, Transitions) {
       io.println("\n===== FINAL ARTICLE =====\n")
       io.println(final_article)
       io.println("\n========================")
-      let Shared(values) = shared
-      Fsm(Shared(Values(..values, final_article: final_article)), Article)
+      let Node(Content, shared) = article
+      Node(Style, Shared(..shared, final_article: final_article))
     },
   )
 }

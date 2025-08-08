@@ -1,5 +1,7 @@
-pub type Values {
-  Values(
+import pocketflow.{type Node}
+
+pub type Shared {
+  Shared(
     topic: String,
     outline_yaml: String,
     formatted_outline: String,
@@ -8,9 +10,21 @@ pub type Values {
   )
 }
 
-pub type Transitions {
-  Article
+pub type Article(state, shared) =
+  Node(state, shared)
+
+pub type Outline {
   Outline
-  Content
+}
+
+pub type Style {
   Style
+}
+
+pub type Content {
+  Content
+}
+
+pub type Start {
+  Start
 }
