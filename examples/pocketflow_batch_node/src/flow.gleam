@@ -1,18 +1,14 @@
 import nodes
-import pocketflow.{type Fsm, type Shared, Fsm, Shared}
-import types.{type Transitions, type Values, Done, Processor, Statistics, Values}
+import pocketflow.{type Node, Node}
+import types.{type Processed, type Shared, type Start, Shared, Start, Statistics}
 
-pub fn run(input_file: String, chunk_size: Int) -> Shared(Values) {
+pub fn run_flow(input_file: String, chunk_size: Int) -> Node(Processed, Shared) {
   let statistics = Statistics(0, 0, 0.0)
-  let values = Values(input_file, chunk_size, statistics)
+  let shared = Shared(input_file, chunk_size, statistics)
 
-  pocketflow.flow(Fsm(Shared(values), Processor), process_csv)
+  pocketflow.basic_flow(Node(Start, shared), create_flow())
 }
 
-fn process_csv(fsm: Fsm(Values, Transitions)) -> Shared(Values) {
-  let Fsm(shared, transition) = fsm
-  case transition {
-    Processor -> process_csv(nodes.csv_processer(shared))
-    Done -> shared
-  }
+fn create_flow() -> fn(Node(Start, Shared)) -> Node(Processed, Shared) {
+  fn(node) { nodes.csv_processer(node) }
 }
