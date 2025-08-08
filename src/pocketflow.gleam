@@ -1,30 +1,35 @@
 import gleam/list
 
-pub type Shared(values) {
-  Shared(values)
+pub type Node(state, shared) {
+  Node(state: state, shared: shared)
 }
 
-// Finite State Machine
-pub type Fsm(values, transitions) {
-  Fsm(Shared(values), transitions)
-}
+pub type Flow(state, state_, shared) =
+  fn(Node(state, shared)) -> Node(state_, shared)
 
-pub type Flow(a, b) =
-  fn(#(Shared(a), b)) -> Shared(a)
+// pub type Shared(values) {
+//   Shared(values)
+// }
 
-pub fn basic_node(prep prep, exec exec, post post) -> Fsm(values, transitions) {
+pub fn basic_node(prep prep, exec exec, post post) -> Node(state, shared) {
   prep |> exec |> post
 }
 
-pub fn batch_node(prep prep, exec exec, post post) -> Fsm(values, transitions) {
+pub fn batch_node(prep prep, exec exec, post post) -> Node(state, shared) {
   let exec_ = fn(items: List(List(_))) { list.map(items, exec) }
   prep |> exec_ |> post
 }
 
-pub fn flow(fsm: Fsm(a, b), flow: fn(Fsm(a, b)) -> Shared(a)) {
-  flow(fsm)
+pub fn basic_flow(
+  start: Node(state, shared),
+  flow: Flow(state, state_, shared),
+) -> Node(state_, shared) {
+  flow(start)
 }
 
-pub fn batch_flow(fsms: List(Fsm(a, b)), flow_: fn(Fsm(a, b)) -> Shared(a)) {
-  list.map(fsms, fn(fsm) { flow(fsm, flow_) })
+pub fn batch_flow(
+  flows: List(Node(state, shared)),
+  flow: Flow(state, state_, shared),
+) {
+  list.map(flows, fn(node) { flow(node) })
 }
