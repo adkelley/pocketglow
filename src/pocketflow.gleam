@@ -30,6 +30,6 @@ pub fn basic_flow(
 pub fn batch_flow(
   flows: List(Node(state, shared)),
   flow: Flow(state, state_, shared),
-) {
+) -> List(Node(state_, shared)) {
   list.map(flows, fn(node) { flow(node) })
 }
