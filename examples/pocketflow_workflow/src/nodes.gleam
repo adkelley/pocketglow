@@ -1,4 +1,9 @@
+import gleam/dict.{type Dict}
+import gleam/function
+import gleam/int
 import gleam/io
+import gleam/result
+import utils/yaml
 
 import gleam/list
 import gleam/string
@@ -38,32 +43,38 @@ pub fn generate_outline(
       ```
       "
       let response = call_llm(prompt)
-      let assert Ok(yaml_string) = string.split_once(response, on: "```yaml")
-      let assert Ok(yaml_string) = string.split_once(yaml_string.1, "```")
-      // TODO: parse the YAML string
-      // For now, we'll fake it
-      let _yaml_string = string.trim(yaml_string.0)
-      let outline_yaml =
-        "sections:\n- Introduction to AI Safety\n- Key Challenges in AI Safety\n- Strategies for Ensuring AI Safety"
-      // let assert Ok(structured_result) = yaml.load(outline_yaml) |> echo
-      outline_yaml
+      // let assert Ok(yaml_string) = string.split_once(response, on: "```yaml")
+      // let assert Ok(yaml_string) = string.split_once(yaml_string.1, "```")
+      let assert Ok(yaml_string) =
+        result.try(
+          string.split_once(response, on: "```yaml"),
+          apply: fn(yaml_string) { string.split_once(yaml_string.1, "```") },
+        )
+      let assert Ok(structured_outputs) =
+        string.trim(yaml_string.0) |> yaml.yaml_sections
+      let assert Ok(structured_output) = list.first(structured_outputs)
+
+      structured_output
     },
-    post: fn(outline_yaml: String) {
+    post: fn(exec_res: Dict(String, List(String))) {
+      let assert Ok(headings) = dict.get(exec_res, "sections")
+      let outline_yaml = "sections:\n" <> string.join(headings, "")
       io.println("\n===== OUTLINE (YAML) =====\n")
       io.println(outline_yaml)
       io.println("\n===== PARSED OUTLINE =====\n")
-      // TODO: Parse the YAML object to extract the sections
-      // For now we'll fake it
       let formatted_outline =
-        "1. Introduction to AI Safety\n2. Key Challenges in AI Safety\n3. Strategies for Ensuring AI Safety\n"
+        list.index_fold(headings, "", fn(acc, a, index) {
+          acc <> int.to_string(index + 1) <> ". " <> a
+        })
+      // "1. Introduction to AI Safety\n2. Key Challenges in AI Safety\n3. Strategies for Ensuring AI Safety\n"
       io.println(formatted_outline)
-      io.println("=========================")
+      io.println("\n=========================")
       // Display results
       io.println("\n===== OUTLINE (YAML) =====\n")
       io.println(outline_yaml)
       io.println("\n===== PARSED OUTLINE =====\n")
       io.println(formatted_outline)
-      io.println("=========================")
+      io.println("\n=========================")
 
       let Node(Start, shared) = article
       Node(
@@ -132,13 +143,16 @@ pub fn apply_style(article: Article(Content, Shared)) -> Article(Style, Shared) 
     exec: fn(draft: String) {
       // Apply a specific style to the article
       let prompt = "
-        Rewrite the following draft in a conversational, engaging style: " <> draft <> "
+        Rewrite the following draft into an article that is conversational, with engaging style: " <> draft <> "
 
         Make it:
         - Conversational and warm in tone
         - Include rhetorical questions that engage the reader
         - Add analogies and metaphors where appropriate
         - Include a strong opening and conclusion
+
+        Your reply should be the article, only
+        
         "
       call_llm(prompt)
     },
