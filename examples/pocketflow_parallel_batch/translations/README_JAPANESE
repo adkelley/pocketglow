@@ -1,0 +1,24 @@
+# pocketflow_parallel_batch
+
+[![Package Version](https://img.shields.io/hexpm/v/pocketflow_parallel_batch)](https://hex.pm/packages/pocketflow_parallel_batch)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/pocketflow_parallel_batch/)
+
+```sh
+gleam add pocketflow_parallel_batch@1
+```
+```gleam
+import pocketflow_parallel_batch
+
+pub fn main() -> Nil {
+  // TODO: プロジェクトの使用例
+}
+```
+
+詳細なドキュメントは <https://hexdocs.pm/pocketflow_parallel_batch> にあります。
+
+## 開発
+
+```sh
+gleam run   # プロジェクトを実行する
+gleam test  # テストを実行する
+```
