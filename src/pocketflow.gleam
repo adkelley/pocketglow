@@ -2,6 +2,8 @@ import gleam/list
 import gleam/result
 import task
 
+// TODO: inline for Beam & Javascript
+
 pub type Node(state, shared) {
   Node(state: state, shared: shared)
 }
@@ -27,7 +29,7 @@ pub fn parallel_node(prep prep, exec exec, post post) -> Node(state, shared) {
     |> fn(res) {
       case res {
         Ok(results) -> results
-        // TODO Alternative to panic?
+        // TODO: Alternative to panic?
         Error(_) -> panic
       }
     }
@@ -47,4 +49,21 @@ pub fn batch_flow(
   flow: Flow(state, state_, shared),
 ) -> List(Node(state_, shared)) {
   list.map(flows, fn(node) { flow(node) })
+}
+
+pub fn parallel_flow(
+  params: #(List(Node(state, shared)), Int),
+  flow: Flow(state, state_, shared),
+) -> List(Node(state_, shared)) {
+  let #(flows, timeout) = params
+  list.map(flows, fn(node) { task.async(fn() { flow(node) }) })
+  |> task.try_await_all(timeout)
+  |> result.all
+  |> fn(res) {
+    case res {
+      Ok(results) -> results
+      // TODO: Alternative to panic
+      Error(_) -> panic
+    }
+  }
 }
