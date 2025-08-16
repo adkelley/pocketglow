@@ -46,7 +46,12 @@ pub fn basic_node(prep prep, exec exec, post post) -> Node(state, shared) {
 }
 
 pub fn batch_node(prep prep, exec exec, post post) -> Node(state, shared) {
-  let exec_ = fn(items: List(_)) { list.map(items, exec) }
+  let exec_ = fn(params: #(List(_), Retry)) {
+    let #(items, retry) = params
+    // TODO: Should this short circuit upon error?
+    list.map(items, fn(x) { retry_exec(exec, #(x, retry), "", 0) })
+  }
+
   prep |> exec_ |> post
 }
 
