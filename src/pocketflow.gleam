@@ -5,6 +5,7 @@ import gleam/list
 import gleam/result
 
 // TODO: remove task, and create ffi for Beam & Javascript
+import gleam/erlang/process
 import task
 
 pub type Node(state, shared) {
@@ -31,11 +32,18 @@ fn retry_exec(
 ) -> Result(c, String) {
   let #(a, retry) = params
   case count < retry.max_retries {
-    True ->
+    True -> {
       case exec(a) {
-        Ok(x) -> Ok(x)
-        Error(e) -> retry_exec(exec, params, e, count + 1)
+        Ok(x) -> {
+          process.sleep(retry.wait * 1000)
+          Ok(x)
+        }
+        Error(e) -> {
+          process.sleep(retry.wait * 1000)
+          retry_exec(exec, params, e, count + 1)
+        }
       }
+    }
     False -> Error(error <> ", Error: Exceeded max retries")
   }
 }
@@ -48,7 +56,7 @@ pub fn basic_node(prep prep, exec exec, post post) -> Node(state, shared) {
 pub fn batch_node(prep prep, exec exec, post post) -> Node(state, shared) {
   let exec_ = fn(params: #(List(_), Retry)) {
     let #(items, retry) = params
-    // TODO: Should this short circuit upon error?
+    // TODO: Should this short circuit upon first error?
     list.map(items, fn(x) { retry_exec(exec, #(x, retry), "", 0) })
   }
 
@@ -56,15 +64,18 @@ pub fn batch_node(prep prep, exec exec, post post) -> Node(state, shared) {
 }
 
 pub fn parallel_node(prep prep, exec exec, post post) -> Node(state, shared) {
-  let exec_ = fn(params: #(List(a), Int)) {
-    let #(tasks, timeout) = params
-    list.map(tasks, fn(t) { task.async(fn() { exec(t) }) })
+  let exec_ = fn(params: #(#(List(a), Int), Retry)) {
+    let #(#(tasks, timeout), retry) = params
+    list.map(tasks, fn(t) {
+      task.async(fn() { retry_exec(exec, #(t, retry), "", 0) })
+    })
     |> task.try_await_all(timeout)
     |> result.all
     |> fn(res) {
       case res {
         Ok(results) -> results
         // TODO: Alternative to panic?
+        // TODO: Similiar to short circuit batch_node
         Error(_) -> panic
       }
     }
