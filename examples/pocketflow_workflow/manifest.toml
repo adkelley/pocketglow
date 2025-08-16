@@ -11,7 +11,7 @@ packages = [
   { name = "gleam_stdlib", version = "0.62.1", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "0080706D3A5A9A36C40C68481D1D231D243AF602E6D2A2BE67BA8F8F4DFF45EC" },
   { name = "gleeunit", version = "1.6.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "FDC68A8C492B1E9B429249062CD9BAC9B5538C6FBF584817205D0998C42E1DAC" },
   { name = "openai", version = "0.1.0", build_tools = ["gleam"], requirements = ["envoy", "gleam_http", "gleam_httpc", "gleam_json", "gleam_stdlib"], source = "git", repo = "https://github.com/adkelley/openai", commit = "b5f34ebcc259e9cedad03179625d9b34a9177f21" },
-  { name = "pocketflow", version = "0.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "task"], source = "git", repo = "https://github.com/adkelley/pocketflow", commit = "c228112fd2b29faeee7732e1daebba86ee7bde2f" },
+  { name = "pocketflow", version = "0.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "task"], source = "local", path = "../.." },
   { name = "task", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_otp", "gleam_stdlib"], source = "git", repo = "https://github.com/adkelley/task", commit = "04fb4ada7598e4a2ea426c06c717e7a387fef383" },
   { name = "yamerl", version = "0.10.0", build_tools = ["rebar3"], requirements = [], otp_app = "yamerl", source = "hex", outer_checksum = "346ADB2963F1051DC837A2364E4ACF6EB7D80097C0F53CBDC3046EC8EC4B4E6E" },
 ]
@@ -24,5 +24,5 @@ gleam_json = { version = ">= 3.0.2 and < 4.0.0" }
 gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 openai = { git = "https://github.com/adkelley/openai", ref = "main" }
-pocketflow = { git = "https://github.com/adkelley/pocketflow", ref = "main" }
+pocketflow = { path = "../.." }
 yamerl = { version = ">= 0.10.0 and < 1.0.0" }

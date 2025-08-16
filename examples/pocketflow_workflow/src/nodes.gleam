@@ -1,5 +1,4 @@
 import gleam/dict.{type Dict}
-import gleam/function
 import gleam/int
 import gleam/io
 import gleam/result
@@ -7,21 +6,19 @@ import utils/yaml
 
 import gleam/list
 import gleam/string
-import pocketflow.{Node}
+import pocketflow.{type Node, Node, Retry}
 
 import types.{
-  type Article, type Content, type Outline, type Shared, type Start, type Style,
-  Content, Outline, Shared, Start, Style,
+  type Content, type Outline, type Shared, type Start, type Style, Content,
+  Outline, Shared, Start, Style,
 }
 import utils/call_llm.{call_llm}
 
-pub fn generate_outline(
-  article: Article(Start, Shared),
-) -> Article(Outline, Shared) {
+pub fn generate_outline(article: Node(Start, Shared)) -> Node(Outline, Shared) {
   pocketflow.basic_node(
     prep: {
       let Node(Start, values) = article
-      values.topic
+      #(values.topic, pocketflow.default_retries())
     },
     exec: fn(topic: String) {
       let prompt =
@@ -42,21 +39,28 @@ pub fn generate_outline(
               Third section
       ```
       "
-      let response = call_llm(prompt)
-      // let assert Ok(yaml_string) = string.split_once(response, on: "```yaml")
-      // let assert Ok(yaml_string) = string.split_once(yaml_string.1, "```")
-      let assert Ok(yaml_string) =
-        result.try(
-          string.split_once(response, on: "```yaml"),
-          apply: fn(yaml_string) { string.split_once(yaml_string.1, "```") },
-        )
-      let assert Ok(structured_outputs) =
-        string.trim(yaml_string.0) |> yaml.yaml_sections
-      let assert Ok(structured_output) = list.first(structured_outputs)
-
-      structured_output
+      let yaml_error = fn(result: Result(a, e)) {
+        result.replace_error(result, "Error: YAML string")
+      }
+      use response <- result.try(call_llm(prompt))
+      use yaml_string <- result.try(
+        string.split_once(response, on: "```yaml")
+        |> yaml_error,
+      )
+      use yaml_string <- result.try(
+        string.split_once(yaml_string.1, "```")
+        |> yaml_error,
+      )
+      use structured_outputs <- result.try(
+        string.trim(yaml_string.0)
+        |> yaml.yaml_sections
+        |> yaml_error,
+      )
+      list.first(structured_outputs)
+      |> yaml_error
     },
-    post: fn(exec_res: Dict(String, List(String))) {
+    post: fn(exec_res: Result(Dict(String, List(String)), String)) {
+      let assert Ok(exec_res) = exec_res
       let assert Ok(headings) = dict.get(exec_res, "sections")
       let outline_yaml = "sections:\n" <> string.join(headings, "")
       io.println("\n===== OUTLINE (YAML) =====\n")
@@ -90,19 +94,21 @@ pub fn generate_outline(
 }
 
 pub fn write_simple_content(
-  article: Article(Outline, Shared),
-) -> Article(Content, Shared) {
+  article: Node(Outline, Shared),
+) -> Node(Content, Shared) {
   pocketflow.basic_node(
     prep: {
       let Node(Outline, shared) = article
-      let formatted_outline = shared.formatted_outline
       // extract each section into a list and pass to exec
-      string.split(formatted_outline, "\n")
-      |> list.filter(fn(xs) { xs != "" })
+      let sections =
+        string.split(shared.formatted_outline, "\n")
+        |> list.filter(fn(xs) { xs != "" })
+      #(sections, pocketflow.default_retries())
     },
     exec: fn(sections: List(String)) {
-      list.fold(sections, [], fn(acc, section) {
-        let prompt = "
+      let paragraphs =
+        list.fold(sections, [], fn(acc, section) {
+          let prompt = "
       Write a short paragraph (MAXIMUM 100 WORDS) about this section:" <> section <> "
 
       Requirements:
@@ -111,12 +117,20 @@ pub fn write_simple_content(
       - Keep it very concise (no more than 100 words)
       - Include one brief example or analogy
       "
-        let content = call_llm(prompt)
-        list.prepend(acc, #(section, content))
-      })
-      |> list.reverse
+          let content = call_llm(prompt)
+          case content {
+            Ok(str) -> list.prepend(acc, Ok(#(section, str)))
+            Error(e) -> list.prepend(acc, Error(#(section, e)))
+          }
+        })
+        |> result.partition
+      case paragraphs.1 {
+        [] -> Ok(paragraphs.0)
+        _ -> Error("Error: call_llm")
+      }
     },
-    post: fn(sections: List(#(String, String))) {
+    post: fn(sections: Result(List(#(String, String)), String)) {
+      let assert Ok(sections) = sections
       io.println("\n===== SECTION CONTENTS =====\n")
       let draft =
         list.fold(over: sections, from: "", with: fn(acc, tuple) {
@@ -134,11 +148,11 @@ pub fn write_simple_content(
   )
 }
 
-pub fn apply_style(article: Article(Content, Shared)) -> Article(Style, Shared) {
+pub fn apply_style(article: Node(Content, Shared)) -> Node(Style, Shared) {
   pocketflow.basic_node(
     prep: {
       let Node(Content, shared) = article
-      shared.draft
+      #(shared.draft, pocketflow.default_retries())
     },
     exec: fn(draft: String) {
       // Apply a specific style to the article
@@ -152,11 +166,12 @@ pub fn apply_style(article: Article(Content, Shared)) -> Article(Style, Shared) 
         - Include a strong opening and conclusion
 
         Your reply should be the article, only
-        
+
         "
       call_llm(prompt)
     },
-    post: fn(final_article: String) {
+    post: fn(exec_res: Result(String, String)) {
+      let assert Ok(final_article) = exec_res
       //  Store the final article in shared data
       io.println("\n===== FINAL ARTICLE =====\n")
       io.println(final_article)

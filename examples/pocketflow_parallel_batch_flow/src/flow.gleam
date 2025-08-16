@@ -21,6 +21,5 @@ fn create_flow() -> fn(Node(Start, Shared)) -> Node(Saved, Shared) {
 }
 
 pub fn run_flow() -> List(Node(Saved, Shared)) {
-  let params = image_batch_flow()
-  pocketflow.parallel_flow(#(params, 10_000), create_flow())
+  pocketflow.parallel_flow(#(image_batch_flow(), 10_000), create_flow())
 }
