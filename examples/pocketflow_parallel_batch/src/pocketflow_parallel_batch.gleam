@@ -1,7 +1,8 @@
 import gleam/io
 import gleam/list
+import gleam/result
 import gleam/string
-import pocketflow.{type Node, Node}
+import pocketflow.{type Node, Node, Retry}
 import simplifile
 
 import types.{
@@ -14,7 +15,13 @@ fn translate_text_node(
 ) -> Node(Translated, Shared) {
   let Node(Start, shared) = translation
   pocketflow.parallel_node(
-    prep: { #(shared.languages, 100_000) },
+    prep: {
+      #(
+        #(shared.languages, 100_000),
+        // Change wait to see difference in wait times
+        Retry(..pocketflow.default_retries(), wait: 0),
+      )
+    },
     exec: fn(language: String) {
       let text = shared.text
       let prompt = "
@@ -24,14 +31,14 @@ Directly return the translated text, without any other text or comments.
 
 Original: " <> text <> "Translated:"
 
-      let result = utils.call_llm(prompt)
+      use result <- result.try(utils.call_llm(prompt))
       io.println("Translated " <> language <> " text")
       io.println("language: " <> language <> " translation: " <> result)
-      #(language, result)
+      Ok(#(language, result))
     },
-    post: fn(results: List(#(String, String))) {
+    post: fn(results: List(Result(#(String, String), String))) {
       list.map(results, fn(result) {
-        let #(language, translation) = result
+        let assert Ok(#(language, translation)) = result
         let output_filename =
           shared.output_dir <> "/README_" <> string.uppercase(language) <> ".md"
         let assert Ok(_) =
@@ -48,9 +55,8 @@ fn run_flow(text: String) -> Node(Translated, Shared) {
 
 fn new(text: String) -> Node(Start, Shared) {
   let output_dir_path = "./translations"
-  let assert Ok(output_dir) = case
-    simplifile.create_directory(output_dir_path)
-  {
+  // TODO: Allow directory to already exist
+  let assert Ok(_) = case simplifile.create_directory(output_dir_path) {
     Ok(Nil) -> Ok(output_dir_path)
     Error(e) -> Error(e)
   }
