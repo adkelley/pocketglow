@@ -1,7 +1,6 @@
+import gleam/io
 import gleam/list
 
-// TODO: Consider option for passing the retries structure
-// import gleam/option.{type Option, None, Some}
 import gleam/result
 
 // TODO: remove task, and create ffi for Beam & Javascript
@@ -19,6 +18,8 @@ pub type Retry {
 pub type Flow(state, state_, shared) =
   fn(Node(state, shared)) -> Node(state_, shared)
 
+// TODO: Should this be called "default_params?"
+// TODO: Add timeout field (i.e, async await)
 pub fn default_retries() -> Retry {
   Retry(max_retries: 1, wait: 0)
 }
@@ -34,11 +35,9 @@ fn retry_exec(
   case count < retry.max_retries {
     True -> {
       case exec(a) {
-        Ok(x) -> {
-          process.sleep(retry.wait * 1000)
-          Ok(x)
-        }
+        Ok(x) -> Ok(x)
         Error(e) -> {
+          // wait 'retry.wait' seconds before the next attempt
           process.sleep(retry.wait * 1000)
           retry_exec(exec, params, e, count + 1)
         }
@@ -70,13 +69,16 @@ pub fn parallel_node(prep prep, exec exec, post post) -> Node(state, shared) {
       task.async(fn() { retry_exec(exec, #(t, retry), "", 0) })
     })
     |> task.try_await_all(timeout)
-    |> result.all
-    |> fn(res) {
-      case res {
-        Ok(results) -> results
-        // TODO: Alternative to panic?
-        // TODO: Similiar to short circuit batch_node
-        Error(_) -> panic
+    |> result.partition
+    |> fn(partition) {
+      case partition.1 {
+        [] -> partition.0
+        _ -> {
+          io.print_error(
+            "Warning: Some processes did not complete before await",
+          )
+          partition.0
+        }
       }
     }
   }
