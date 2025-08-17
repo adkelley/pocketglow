@@ -3,7 +3,7 @@ import gleam/list
 import gleam/result
 import gleam/string
 import pocketflow.{type Node, Node, Retry}
-import simplifile
+import simplifile.{Eexist}
 
 import types.{
   type Shared, type Start, type Translated, Shared, Start, Translated,
@@ -18,7 +18,7 @@ fn translate_text_node(
     prep: {
       #(
         #(shared.languages, 100_000),
-        // Change wait to see difference in wait times
+        // Change wait to see difference in wait times in seconds
         Retry(..pocketflow.default_retries(), wait: 0),
       )
     },
@@ -58,6 +58,10 @@ fn new(text: String) -> Node(Start, Shared) {
   // TODO: Allow directory to already exist
   let assert Ok(_) = case simplifile.create_directory(output_dir_path) {
     Ok(Nil) -> Ok(output_dir_path)
+    Error(Eexist) -> {
+      io.print_error("Error: " <> output_dir_path <> " already exists.")
+      Error(Eexist)
+    }
     Error(e) -> Error(e)
   }
 

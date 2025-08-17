@@ -6,7 +6,7 @@ import utils/yaml
 
 import gleam/list
 import gleam/string
-import pocketflow.{type Node, Node, Retry}
+import pocketflow.{type Node, Node}
 
 import types.{
   type Content, type Outline, type Shared, type Start, type Style, Content,
@@ -165,7 +165,7 @@ pub fn apply_style(article: Node(Content, Shared)) -> Node(Style, Shared) {
         - Add analogies and metaphors where appropriate
         - Include a strong opening and conclusion
 
-        Your reply should be the article, only
+        Directly return the article without any other text or comments.
 
         "
       call_llm(prompt)

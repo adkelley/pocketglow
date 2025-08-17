@@ -14,5 +14,7 @@ pub fn call_llm(prompt: String) -> Result(String, String) {
     list.new()
     |> completions.add_message(System, "You are a helpful assistant")
     |> completions.add_message(User, prompt)
-  Ok(completions.create(api_key, model, messages))
+
+  completions.create(api_key, model, messages)
+  |> result.map_error(with: fn(_) { "opeai api error" })
 }

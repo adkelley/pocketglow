@@ -1,3 +1,4 @@
+import gleam/int
 import gleam/io
 import gleam/list
 
@@ -52,20 +53,25 @@ pub fn basic_node(prep prep, exec exec, post post) -> Node(state, shared) {
   prep |> exec_ |> post
 }
 
+// TODO document the short circuit strategy
 pub fn batch_node(prep prep, exec exec, post post) -> Node(state, shared) {
   let exec_ = fn(params: #(List(_), Retry)) {
     let #(items, retry) = params
-    // TODO: Should this short circuit upon first error?
-    list.map(items, fn(x) { retry_exec(exec, #(x, retry), "", 0) })
+    list.map(items, fn(x) {
+      process.sleep(retry.wait * 1000)
+      retry_exec(exec, #(x, retry), "", 0)
+    })
   }
 
   prep |> exec_ |> post
 }
 
+// TODO: Should I return the result partition, including error processes?
 pub fn parallel_node(prep prep, exec exec, post post) -> Node(state, shared) {
   let exec_ = fn(params: #(#(List(a), Int), Retry)) {
     let #(#(tasks, timeout), retry) = params
     list.map(tasks, fn(t) {
+      process.sleep(retry.wait * 1000)
       task.async(fn() { retry_exec(exec, #(t, retry), "", 0) })
     })
     |> task.try_await_all(timeout)
@@ -74,8 +80,9 @@ pub fn parallel_node(prep prep, exec exec, post post) -> Node(state, shared) {
       case partition.1 {
         [] -> partition.0
         _ -> {
+          let num_errors = list.length(partition.1) |> int.to_string
           io.print_error(
-            "Warning: Some processes did not complete before await",
+            "Warning: " <> num_errors <> " processes failed to complete",
           )
           partition.0
         }
@@ -106,12 +113,17 @@ pub fn parallel_flow(
   let #(flows, timeout) = params
   list.map(flows, fn(node) { task.async(fn() { flow(node) }) })
   |> task.try_await_all(timeout)
-  |> result.all
-  |> fn(res) {
-    case res {
-      Ok(results) -> results
-      // TODO: Alternative to panic
-      Error(_) -> panic
+  |> result.partition
+  |> fn(partition) {
+    case partition.1 {
+      [] -> partition.0
+      _ -> {
+        let num_errors = list.length(partition.1) |> int.to_string
+        io.print_error(
+          "Warning: " <> num_errors <> " processes failed to complete",
+        )
+        partition.0
+      }
     }
   }
 }
