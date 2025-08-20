@@ -1,5 +1,5 @@
-import eil.{Nil}
 import gleam/list
+import image.{Nil}
 import nodes
 import pocketflow.{type Node, Node}
 import types.{

@@ -1,13 +1,12 @@
-import eil.{type Image}
 import gleam/io
 import gleam/result
 import gleam/string
-import image
+import image.{type Image}
 import pocketflow.{type Node, Node}
 import simplifile
 import types.{
-  type Filter, type Filtered, type Loaded, type Saved, type Shared, type Start,
-  Blur, Filtered, Grayscale, Loaded, Saved, Sepia, Shared, Start,
+  type Filtered, type Loaded, type Saved, type Shared, type Start, Blur,
+  Filtered, Grayscale, Loaded, Saved, Sepia, Shared, Start,
 }
 
 pub fn load_image(node: Node(Start, Shared)) -> Node(Loaded, Shared) {

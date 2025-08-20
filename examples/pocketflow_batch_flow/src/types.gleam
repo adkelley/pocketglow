@@ -1,4 +1,4 @@
-import eil.{type Image}
+import image.{type Image}
 
 pub type Shared {
   Shared(input: String, image: Image, filter: Filter)
