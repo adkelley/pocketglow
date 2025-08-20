@@ -1,5 +1,13 @@
+import eil.{type Image}
+
 pub type Shared {
-  Shared(input: String, filter: String)
+  Shared(input: String, image: Image, filter: Filter)
+}
+
+pub type Filter {
+  Grayscale
+  Blur
+  Sepia
 }
 
 pub type Loaded {
