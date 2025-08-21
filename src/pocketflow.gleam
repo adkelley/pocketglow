@@ -4,7 +4,7 @@ import gleam/list
 
 import gleam/result
 
-// TODO: remove task, and create ffi for Beam & Javascript
+// TODO: create ffi for both Beam & Javascript
 import gleam/erlang/process
 import task
 
@@ -12,34 +12,31 @@ pub type Node(state, shared) {
   Node(state: state, shared: shared)
 }
 
-pub type Retry {
-  Retry(max_retries: Int, wait: Int)
+pub type Params(a) {
+  Params(shared: a, max_retries: Int, wait: Int)
 }
+
+pub const max_retries = 1
+
+pub const wait = 0
 
 pub type Flow(state, state_, shared) =
   fn(Node(state, shared)) -> Node(state_, shared)
 
-// TODO: Should this be called "default_params?"
-// TODO: Add timeout field (i.e, async await)
-pub fn default_retries() -> Retry {
-  Retry(max_retries: 1, wait: 0)
-}
-
 fn retry_exec(
   exec exec,
-  params params: #(a, Retry),
+  params params: Params(a),
   // propogate the error to assist in debugging
   error error: String,
   retry_count count: Int,
 ) -> Result(c, String) {
-  let #(a, retry) = params
-  case count < retry.max_retries {
+  case count < params.max_retries {
     True -> {
-      case exec(a) {
+      case exec(params.shared) {
         Ok(x) -> Ok(x)
         Error(e) -> {
           // wait 'retry.wait' seconds before the next attempt
-          process.sleep(retry.wait * 1000)
+          process.sleep(params.wait * 1000)
           retry_exec(exec, params, e, count + 1)
         }
       }
@@ -49,17 +46,16 @@ fn retry_exec(
 }
 
 pub fn basic_node(prep prep, exec exec, post post) -> Node(state, shared) {
-  let exec_ = fn(params: #(_, Retry)) { retry_exec(exec, params, "", 0) }
+  let exec_ = fn(params: Params(a)) { retry_exec(exec, params, "", 0) }
   prep |> exec_ |> post
 }
 
 // TODO document the short circuit strategy
 pub fn batch_node(prep prep, exec exec, post post) -> Node(state, shared) {
-  let exec_ = fn(params: #(List(_), Retry)) {
-    let #(items, retry) = params
-    list.map(items, fn(x) {
-      process.sleep(retry.wait * 1000)
-      retry_exec(exec, #(x, retry), "", 0)
+  let exec_ = fn(params: Params(List(_))) {
+    list.map(params.shared, fn(s) {
+      process.sleep(params.wait * 1000)
+      retry_exec(exec, Params(..params, shared: s), "", 0)
     })
   }
 
@@ -68,11 +64,11 @@ pub fn batch_node(prep prep, exec exec, post post) -> Node(state, shared) {
 
 // TODO: Should I return the result partition, including error processes?
 pub fn parallel_node(prep prep, exec exec, post post) -> Node(state, shared) {
-  let exec_ = fn(params: #(#(List(a), Int), Retry)) {
-    let #(#(tasks, timeout), retry) = params
-    list.map(tasks, fn(t) {
-      process.sleep(retry.wait * 1000)
-      task.async(fn() { retry_exec(exec, #(t, retry), "", 0) })
+  let exec_ = fn(params_: #(Params(List(a)), Int)) {
+    let #(params, timeout) = params_
+    list.map(params.shared, fn(s) {
+      process.sleep(params.wait * 1000)
+      task.async(fn() { retry_exec(exec, Params(..params, shared: s), "", 0) })
     })
     |> task.try_await_all(timeout)
     |> result.partition
