@@ -1,6 +1,6 @@
 import gleam/io
 import gleam/string
-import pocketflow.{type Node, Node}
+import pocketflow.{type Node, Node, Params, max_retries, wait}
 import task
 import types.{
   type Branched, type Fetched, type Shared, type Start, type Suggested, Accepted,
@@ -14,9 +14,10 @@ pub fn fetch_recipes(recipe: Node(Start, Shared)) -> Node(Fetched, Shared) {
       let handle =
         task.async(fn() { utils.get_user_input("Enter ingredient: ") })
       let Node(Start, shared) = recipe
-      #(
+      Params(
         Shared(..shared, ingredient: task.await_forever(handle)),
-        pocketflow.default_retries(),
+        max_retries,
+        wait,
       )
     },
     exec: fn(shared: Shared) {
@@ -34,7 +35,7 @@ pub fn suggest_recipe(recipe: Node(Fetched, Shared)) -> Node(Suggested, Shared) 
   pocketflow.basic_node(
     prep: {
       let Node(Fetched, shared) = recipe
-      #(shared, pocketflow.default_retries())
+      Params(shared, max_retries, wait)
     },
     exec: fn(shared: Shared) {
       let handle =
@@ -52,7 +53,7 @@ pub fn suggest_recipe(recipe: Node(Fetched, Shared)) -> Node(Suggested, Shared) 
 
 pub fn get_approval(recipe: Node(Suggested, Shared)) -> Node(Branched, Shared) {
   pocketflow.basic_node(
-    prep: { #(Nil, pocketflow.default_retries()) },
+    prep: { Params(Nil, max_retries, wait) },
     exec: fn(_) {
       let handle =
         task.async(fn() { utils.get_user_input("\nAccept this recipe? (y/n) ") })

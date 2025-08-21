@@ -6,7 +6,7 @@ import utils/yaml
 
 import gleam/list
 import gleam/string
-import pocketflow.{type Node, Node}
+import pocketflow.{type Node, Node, Params, max_retries, wait}
 
 import types.{
   type Content, type Outline, type Shared, type Start, type Style, Content,
@@ -18,7 +18,8 @@ pub fn generate_outline(article: Node(Start, Shared)) -> Node(Outline, Shared) {
   pocketflow.basic_node(
     prep: {
       let Node(Start, values) = article
-      #(values.topic, pocketflow.default_retries())
+      Params(values.topic, max_retries, wait)
+      // #(values.topic, pocketflow.default_retries())
     },
     exec: fn(topic: String) {
       let prompt =
@@ -103,7 +104,7 @@ pub fn write_simple_content(
       let sections =
         string.split(shared.formatted_outline, "\n")
         |> list.filter(fn(xs) { xs != "" })
-      #(sections, pocketflow.default_retries())
+      Params(sections, max_retries, wait)
     },
     exec: fn(sections: List(String)) {
       let paragraphs =
@@ -152,7 +153,7 @@ pub fn apply_style(article: Node(Content, Shared)) -> Node(Style, Shared) {
   pocketflow.basic_node(
     prep: {
       let Node(Content, shared) = article
-      #(shared.draft, pocketflow.default_retries())
+      Params(shared.draft, max_retries, wait)
     },
     exec: fn(draft: String) {
       // Apply a specific style to the article

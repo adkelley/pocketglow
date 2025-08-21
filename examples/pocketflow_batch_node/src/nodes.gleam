@@ -2,7 +2,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/result
-import pocketflow.{type Node, Node}
+import pocketflow.{type Node, Node, Params, max_retries, wait}
 import types.{
   type Processed, type Shared, type Start, Processed, Shared, Start, Statistics,
 }
@@ -15,7 +15,7 @@ pub fn csv_processer(processor: Node(Start, Shared)) -> Node(Processed, Shared) 
   pocketflow.batch_node(
     prep: {
       let chunks = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]
-      #(chunks, pocketflow.default_retries())
+      Params(chunks, max_retries, wait)
     },
     exec: fn(chunk: List(Int)) {
       Sales(

@@ -8,9 +8,9 @@ packages = [
   { name = "gleam_otp", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib"], otp_app = "gleam_otp", source = "hex", outer_checksum = "7987CBEBC8060B88F14575DEF546253F3116EBE2A5DA6FD82F38243FCE97C54B" },
   { name = "gleam_stdlib", version = "0.62.1", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "0080706D3A5A9A36C40C68481D1D231D243AF602E6D2A2BE67BA8F8F4DFF45EC" },
   { name = "gleeunit", version = "1.6.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "FDC68A8C492B1E9B429249062CD9BAC9B5538C6FBF584817205D0998C42E1DAC" },
-  { name = "pocketflow", version = "0.1.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib", "task"], source = "git", repo = "https://github.com/adkelley/pocketflow", commit = "edca2aef16663a95d8fd8ab03036920e10675e4e" },
+  { name = "pocketflow", version = "0.1.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib", "task"], source = "git", repo = "https://github.com/adkelley/pocketflow", commit = "0efb12838318fd17d1e808ec7d37f7bb43629292" },
   { name = "simplifile", version = "0.2.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "A08BB90049138E23A64D114ECDB0E16F3B674365F6FE4903CD9826DDB66C6F1B" },
-  { name = "task", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_otp", "gleam_stdlib"], source = "git", repo = "https://github.com/adkelley/task", commit = "0dcd218c2daa2dd6a333fbe82b956c5ce6c9afa9" },
+  { name = "task", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_otp", "gleam_stdlib"], source = "git", repo = "https://github.com/adkelley/task", commit = "989d0f16a0212adfbd7e87b077989a49d1ab0b60" },
   { name = "vix", version = "0.35.0", build_tools = ["mix", "make"], requirements = ["cc_precompiler", "elixir_make", "kino"], otp_app = "vix", source = "hex", outer_checksum = "A3E80067A89D0631B6CF2B93594E03C1B303A2C7CDDBBDD28040750D521984E5" },
 ]
 

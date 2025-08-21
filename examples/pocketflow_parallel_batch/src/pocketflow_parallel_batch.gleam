@@ -2,7 +2,7 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
-import pocketflow.{type Node, Node, Retry}
+import pocketflow.{type Node, Node, Params, max_retries, wait}
 import simplifile.{Eexist}
 
 import types.{
@@ -17,9 +17,13 @@ fn translate_text_node(
   pocketflow.parallel_node(
     prep: {
       #(
-        #(shared.languages, 100_000),
-        // Change wait to see difference in wait times in seconds
-        Retry(..pocketflow.default_retries(), wait: 0),
+        Params(
+          shared.languages,
+          max_retries,
+          // Try changing wait to see difference in wait times in seconds
+          wait,
+        ),
+        100_000,
       )
     },
     exec: fn(language: String) {

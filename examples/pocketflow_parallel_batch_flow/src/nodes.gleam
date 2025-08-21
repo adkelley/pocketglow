@@ -2,7 +2,7 @@ import gleam/io
 import gleam/result
 import gleam/string
 import image.{type Image}
-import pocketflow.{type Node, Node}
+import pocketflow.{type Node, Node, Params, max_retries, wait}
 import simplifile
 import types.{
   type Filtered, type Loaded, type Saved, type Shared, type Start, Blur,
@@ -13,7 +13,7 @@ pub fn load_image(node: Node(Start, Shared)) -> Node(Loaded, Shared) {
   pocketflow.basic_node(
     prep: {
       let Node(Start, shared) = node
-      #("./images/" <> shared.input, pocketflow.default_retries())
+      Params("./images/" <> shared.input, max_retries, wait)
     },
     exec: fn(image_path: String) { image.read(image_path) },
     post: fn(image: Result(Image, String)) {
@@ -29,7 +29,7 @@ pub fn apply_filter(node: Node(Loaded, Shared)) -> Node(Filtered, Shared) {
   pocketflow.basic_node(
     prep: {
       let Node(Loaded, shared) = node
-      #(shared.image, pocketflow.default_retries())
+      Params(shared.image, max_retries, wait)
     },
     exec: fn(image: Image) {
       let Node(Loaded, shared) = node
@@ -64,9 +64,10 @@ pub fn save_image(node: Node(Filtered, Shared)) -> Node(Saved, Shared) {
         Blur -> "blur"
         Sepia -> "sepia"
       }
-      #(
+      Params(
         string.concat(["./output/", input_name, "_", filter_name]),
-        pocketflow.default_retries(),
+        max_retries,
+        wait,
       )
     },
     exec: fn(image_path: String) {
