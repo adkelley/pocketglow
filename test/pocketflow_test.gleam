@@ -2,7 +2,7 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
-import pocketflow.{type Node, Node, Params, max_retries, wait}
+import pocketglow.{type Node, Node, Params, max_retries, wait}
 
 type Shared =
   String
@@ -29,7 +29,7 @@ pub fn main() -> Nil {
 // gleeunit test functions end in `_test`
 pub fn basic_nodes_test() {
   let start = fn(greeting: Node(Start, Shared)) -> Node(Middle, Shared) {
-    pocketflow.basic_node(
+    pocketglow.basic_node(
       prep: {
         let Node(Start, name) = greeting
         Params(name, max_retries, wait)
@@ -43,7 +43,7 @@ pub fn basic_nodes_test() {
     )
   }
   let middle = fn(greeting: Node(Middle, Shared)) -> Node(End, Shared) {
-    pocketflow.basic_node(
+    pocketglow.basic_node(
       prep: {
         let Node(Middle, name) = greeting
         Params(name, max_retries, wait)
@@ -58,7 +58,7 @@ pub fn basic_nodes_test() {
   }
 
   let flow_test = fn(joe: String) -> Node(End, Shared) {
-    pocketflow.basic_flow(Node(Start, joe), fn(node) { start(node) |> middle })
+    pocketglow.basic_flow(Node(Start, joe), fn(node) { start(node) |> middle })
   }
 
   io.println("\n*********************")
@@ -69,7 +69,7 @@ pub fn basic_nodes_test() {
 
 pub fn batch_node_test() {
   let start = fn(node: Node(Start, Shared)) -> Node(End, Shared) {
-    pocketflow.batch_node(
+    pocketglow.batch_node(
       prep: {
         let Node(Start, name) = node
         Params([name, "armstrong"], max_retries, wait)
@@ -88,7 +88,7 @@ pub fn batch_node_test() {
 
   let flow_test = fn(joe: String) -> Node(End, Shared) {
     let name = Node(Start, joe)
-    pocketflow.basic_flow(name, fn(node) { start(node) })
+    pocketglow.basic_flow(name, fn(node) { start(node) })
   }
 
   io.println("\n*********************")

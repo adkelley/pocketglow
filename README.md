@@ -1,20 +1,24 @@
-# pocketflow
+# pocketglow
 
-[![Package Version](https://img.shields.io/hexpm/v/pocketflow)](https://hex.pm/packages/pocketflow)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/pocketflow/)
+An exploration in porting python's [pocketflow](https://github.com/The-Pocket/PocketFlow/tree/main) to Gleam
+
+[![Package Version](https://img.shields.io/hexpm/v/pocketglow)](https://hex.pm/packages/pocketglow)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/pocketglow/)
 
 ```sh
-gleam add pocketflow@1
+gleam add pocketglow@1
 ```
 ```gleam
-import pocketflow
+import pocketglow
 
 pub fn main() -> Nil {
   // TODO: An example of the project in use
 }
 ```
 
-Further documentation can be found at <https://hexdocs.pm/pocketflow>.
+TODO: Add a description
+
+Further documentation can be found at <https://hexdocs.pm/pocketglow>.
 
 ## Development
 

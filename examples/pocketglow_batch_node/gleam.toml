@@ -1,12 +1,12 @@
-name = "pocketglow"
-version = "0.2.0"
+name = "pocketglow_batch_node"
+version = "1.0.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
 #
-description = "Exploratory work to port python's pocketflow to Gleam"
-licences = ["Apache-2.0"]
-repository = { type = "github", user = "", repo = "" }
+# description = ""
+# licences = ["Apache-2.0"]
+# repository = { type = "github", user = "", repo = "" }
 # links = [{ title = "Website", href = "" }]
 #
 # For a full reference of all the available options, you can have a look at
@@ -14,8 +14,8 @@ repository = { type = "github", user = "", repo = "" }
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
-task = { git = "https://github.com/adkelley/task", ref = "main"}
-gleam_erlang = ">= 1.3.0 and < 2.0.0"
+pocketglow = { git = "https://github.com/adkelley/pocketglow", ref = "main" }
+
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
