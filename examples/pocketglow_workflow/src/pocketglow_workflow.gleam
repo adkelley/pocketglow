@@ -1,3 +1,4 @@
+import argv
 import flow
 import gleam/int
 import gleam/io
@@ -7,7 +8,11 @@ import types.{Style}
 
 pub fn main() -> Nil {
   // Print starting message
-  let topic = "AI Safety"
+  // User question?
+  let topic = case argv.load().arguments {
+    ["--topic", topic] -> topic
+    _ -> "AI Safety"
+  }
   io.print("\n=== Starting Article Workflow on Topic: " <> topic <> " ===\n")
   let Node(Style, shared) = flow.run_flow(topic)
 
