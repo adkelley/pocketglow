@@ -16,5 +16,5 @@ pub fn call_llm(prompt: String) -> Result(String, String) {
     |> completions.add_message(User, prompt)
 
   completions.create(api_key, model, messages)
-  |> result.map_error(with: fn(_) { "opeai api error" })
+  |> result.map_error(with: fn(_) { "openai api error" })
 }
