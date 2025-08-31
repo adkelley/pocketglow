@@ -1,8 +1,8 @@
-import chat/completions
-import chat/types.{System, User}
 import envoy
 import gleam/list
 import gleam/result
+import openai/chat/completions
+import openai/chat/types.{System, User}
 
 pub fn call_llm(prompt: String) -> Result(String, String) {
   use api_key <- result.try(
@@ -15,6 +15,13 @@ pub fn call_llm(prompt: String) -> Result(String, String) {
     |> completions.add_message(System, "You are a helpful assistant")
     |> completions.add_message(User, prompt)
 
-  completions.create(api_key, model, messages)
-  |> result.map_error(with: fn(_) { "openai api error" })
+  use res <- result.try(
+    completions.create(api_key, model, messages)
+    |> result.map_error(with: fn(_) { "openai api error" }),
+  )
+
+  use choice <- result.try(
+    list.first(res.choices) |> result.map_error(with: fn(_) { "openai error" }),
+  )
+  Ok(choice.message.content)
 }
