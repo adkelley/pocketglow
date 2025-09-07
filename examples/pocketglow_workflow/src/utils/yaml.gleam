@@ -1,9 +1,9 @@
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode.{type DecodeError, type Decoder}
+import gleam/erlang/charlist.{type Charlist}
 import gleam/list
 import gleam/result
-import gleam/string
 
 pub fn yaml_sections(
   yaml: String,
@@ -14,8 +14,8 @@ pub fn yaml_sections(
   list.flatten(doc)
   |> list.map(fn(tuple: #(List(Int), List(List(Int)))) {
     let #(section, headings) = tuple
-    let headings = list.map(headings, transform)
-    dict.new() |> dict.insert(transform(section), headings)
+    let headings = list.map(headings, to_string)
+    dict.new() |> dict.insert(to_string(section), headings)
   })
   |> Ok()
 }
@@ -23,11 +23,13 @@ pub fn yaml_sections(
 @external(erlang, "yaml_ffi", "yamerl_constr_string")
 fn yamerl_constr_string(yaml: String) -> Dynamic
 
-fn transform(codepoints: List(Int)) -> String {
+@external(erlang, "gleam_stdlib", "identity")
+fn from_codepoints(c: List(Int)) -> Charlist
+
+fn to_string(codepoints: List(Int)) -> String {
   codepoints
-  |> list.map(string.utf_codepoint)
-  |> result.values
-  |> string.from_utf_codepoints
+  |> from_codepoints
+  |> charlist.to_string
 }
 
 fn section_decoder() -> Decoder(#(List(Int), List(List(Int)))) {
